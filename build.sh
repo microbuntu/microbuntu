@@ -3,11 +3,12 @@ set -xe
 readonly THREADS=$(nproc)
 readonly OKSH_VERSION="7.8"
 readonly TOYBOX_VERSION="0.8.9"
+readonly LINUX_VERSION="7.0"
 
 mkdir -p build
 cd build
 
-if [ ! -d "fs" ]; then
+if [ ! -d fs ]; then
 	mkdir fs
 	cd fs
 
@@ -27,10 +28,10 @@ if [ ! -d "fs" ]; then
 fi
 cp -a ../fs/. fs
 
-mkdir -p boot
-cp -a ../boot/. boot
+mkdir -p boot/boot
+cp -a ../boot/. boot/boot
 
-if [ ! -d "oksh" ]; then
+if [ ! -d oksh ]; then
 	wget \
 		-O oksh.tar.gz \
 		https://github.com/ibara/oksh/releases/download/oksh-$OKSH_VERSION/oksh-$OKSH_VERSION.tar.gz
@@ -43,7 +44,6 @@ if [ ! -f Makefile ]; then
 	export CFLAGS="-std=c99 -Os -pipe -Wall -Wextra -fno-pie -fno-PIE"
 	export LDFLAGS="-static -no-pie -s"
 	./configure --no-thanks
-	cd ..
 fi
 make -j$THREADS
 cd ..
@@ -69,8 +69,26 @@ export PREFIX=../fs/bin
 make -j$THREADS
 make install_flat
 cd ..
+ln -sf bin/init fs/init
+
+if [ ! -d linux ]; then
+	readonly LINUX_MAJOR=${LINUX_VERSION%%.*}
+	wget \
+		-O linux.tar.xz \
+		https://cdn.kernel.org/pub/linux/kernel/v$LINUX_MAJOR.x/linux-$LINUX_VERSION.tar.xz
+	tar xf linux.tar.xz
+	rm linux.tar.xz
+	mv linux-$LINUX_VERSION "linux"
+fi
+cd linux
+if [ ! -f .config ]; then
+	make defconfig
+fi
+make bzImage -j $THREADS
+cd ..
+cp -f linux/arch/x86/boot/bzImage boot/boot/vmlinuz
 
 cd fs
-find | cpio -o -H newc > ../boot/init.cpio
+find | cpio -o -H newc > ../boot/boot/init.cpio
 cd ..
 grub-mkrescue -o microbuntu.iso boot
