@@ -82,6 +82,9 @@ cd linux
 if [ ! -f .config ]; then
 	cp ../../linux/.config .
 fi
+if [ ! -f drivers/video/logo/logo_microbuntu_clut224.ppm ]; then
+	cp ../../linux/drivers/video/logo/logo_microbuntu_clut224.ppm drivers/video/logo/logo_microbuntu_clut224.ppm
+fi
 make bzImage -j $THREADS
 cd ..
 cp -f linux/arch/x86/boot/bzImage boot/boot/vmlinuz
