@@ -60,9 +60,7 @@ if [ ! -d toybox ]; then
 fi
 cd toybox
 if [ ! -f .config ]; then
-	make defconfig
-	echo "CONFIG_INIT=y" >> .config
-	echo "CONFIG_GETTY=y" >> .config
+	cp ../../toybox/.config .
 fi
 export CFLAGS="-Os -U_FORTIFY_SOURCE -static"
 export PREFIX=../fs/bin
@@ -82,7 +80,7 @@ if [ ! -d linux ]; then
 fi
 cd linux
 if [ ! -f .config ]; then
-	make defconfig
+	cp ../../linux/.config .
 fi
 make bzImage -j $THREADS
 cd ..
