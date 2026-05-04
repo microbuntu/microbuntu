@@ -24,8 +24,10 @@ if [ ! -d "fs" ]; then
 
 	cd ..
 fi
-
 cp -a ../fs/. fs
+
+mkdir -p boot
+cp -a ../boot/. boot
 
 if [ ! -d "oksh" ]; then
 	wget \
@@ -36,7 +38,6 @@ if [ ! -d "oksh" ]; then
 	mv oksh-$OKSH_VERSION oksh
 	cd oksh
 fi
-
 if [ ! -f oksh/Makefile ]; then
 	export CFLAGS="-std=c99 -Os -pipe -Wall -Wextra -fno-pie -fno-PIE"
 	export LDFLAGS="-static -no-pie -s"
@@ -44,7 +45,11 @@ if [ ! -f oksh/Makefile ]; then
 	./configure --no-thanks
 	cd ..
 fi
-
 make -C oksh -j$THREADS
 cp oksh/oksh fs/bin/
 ln -sf oksh fs/bin/sh
+
+cd fs
+find | cpio -o -H newc > ../boot/init.cpio
+cd ..
+grub-mkrescue -o microbuntu.iso boot
