@@ -1,0 +1,8 @@
+#!/bin/sh
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+mount -t tmpfs tmpfs /run
+hostname "$(cat /etc/hostname)"
+dmesg -n 1
+exec /bin/login
