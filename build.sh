@@ -2,6 +2,7 @@
 set -xe
 readonly THREADS=$(nproc)
 readonly OKSH_VERSION="7.8"
+readonly TOYBOX_VERSION="0.8.9"
 
 mkdir -p build
 cd build
@@ -36,18 +37,38 @@ if [ ! -d "oksh" ]; then
 	tar xf oksh.tar.gz
 	rm oksh.tar.gz
 	mv oksh-$OKSH_VERSION oksh
-	cd oksh
 fi
-if [ ! -f oksh/Makefile ]; then
+cd oksh
+if [ ! -f Makefile ]; then
 	export CFLAGS="-std=c99 -Os -pipe -Wall -Wextra -fno-pie -fno-PIE"
 	export LDFLAGS="-static -no-pie -s"
-	cd oksh
 	./configure --no-thanks
 	cd ..
 fi
-make -C oksh -j$THREADS
+make -j$THREADS
+cd ..
 cp oksh/oksh fs/bin/
 ln -sf oksh fs/bin/sh
+
+if [ ! -d toybox ]; then
+	wget \
+		-O toybox.tar.gz \
+		https://landley.net/toybox/downloads/toybox-$TOYBOX_VERSION.tar.gz
+	tar -xf toybox.tar.gz
+	rm toybox.tar.gz
+	mv toybox-$TOYBOX_VERSION toybox
+fi
+cd toybox
+if [ ! -f .config ]; then
+	make defconfig
+	echo "CONFIG_INIT=y" >> .config
+	echo "CONFIG_GETTY=y" >> .config
+fi
+export CFLAGS="-Os -U_FORTIFY_SOURCE -static"
+export PREFIX=../fs/bin
+make -j$THREADS
+make install_flat
+cd ..
 
 cd fs
 find | cpio -o -H newc > ../boot/init.cpio
