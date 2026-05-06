@@ -1,6 +1,7 @@
 #!/bin/sh
 set -xe
 readonly THREADS=$(nproc)
+readonly MUSL_VERSION="1.2.6"
 readonly OKSH_VERSION="7.8"
 readonly TOYBOX_VERSION="0.8.9"
 readonly LINUX_VERSION="7.0"
@@ -30,6 +31,22 @@ cp -a ../fs/. fs
 
 mkdir -p boot/boot
 cp -a ../boot/. boot/boot
+
+if [ ! -d musl ]; then
+	wget \
+		-O musl.tar.gz \
+		https://git.musl-libc.org/cgit/musl/snapshot/musl-$MUSL_VERSION.tar.gz
+	tar xf musl.tar.gz
+	rm musl.tar.gz
+	mv musl-$MUSL_VERSION musl
+fi
+cd musl
+if [ ! -f config.mak ]; then
+	./configure --prefix=/usr --syslibdir=/lib --disable-shared
+fi
+make
+make DESTDIR="$(realpath ../fs)" install
+cd ..
 
 if [ ! -d sinit ]; then
 	git clone git://git.suckless.org/sinit
