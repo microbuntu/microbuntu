@@ -31,6 +31,15 @@ cp -a ../fs/. fs
 mkdir -p boot/boot
 cp -a ../boot/. boot/boot
 
+if [ ! -d sinit ]; then
+	git clone git://git.suckless.org/sinit
+	cp ../sinit/config.h sinit
+fi
+cd sinit
+make
+make install DESTDIR=../fs PREFIX=/usr
+cd ..
+
 if [ ! -d oksh ]; then
 	wget \
 		-O oksh.tar.gz \
@@ -67,7 +76,6 @@ export PREFIX=../fs/bin
 make -j$THREADS
 make install_flat
 cd ..
-ln -sf bin/init fs/init
 
 if [ ! -d linux ]; then
 	readonly LINUX_MAJOR=${LINUX_VERSION%%.*}
